@@ -44,12 +44,12 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct DbConfig {
     pairs: Vec<Pair>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Pair {
     file_name: String,
     config_svn_url: String,
@@ -58,7 +58,11 @@ struct Pair {
 impl ConfigFiles {
     async fn new() -> Result<Self> {
         let dir_path = Path::new(&env::var("USERPROFILE")?).join("config_xmls");
-        let db = ConfigFiles::get_db(dir_path.to_str().unwrap()).await?;
+        if !dir_path.exists().await {
+            fs::create_dir_all(&dir_path).await?;
+        }
+        let db_file_path = dir_path.join("map.toml");
+        let db = ConfigFiles::get_db(db_file_path.to_str().unwrap()).await?;
         Ok(Self { dir: dir_path, db })
     }
 
@@ -86,13 +90,14 @@ impl ConfigFiles {
         let file_path = PathBuf::new().join(&self.dir).join(&file_name);
         fs::write(&file_path, file_content).await?;
         self.db.pairs.push(Pair {
-            file_name: file_name,
+            file_name,
             config_svn_url: svn_url.to_owned(),
         });
         Ok(())
     }
 }
 
+#[derive(Debug)]
 struct ConfigFiles {
     dir: PathBuf,
     db: DbConfig,
