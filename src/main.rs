@@ -25,9 +25,12 @@ async fn main() -> Result<()> {
     let list = cmd.list_parallel(&svn_path, |svn_url, entry| {
         let config_str = [("configuration.xml", true), ("Variation", false)];
         if config_str.iter().all(|i| i.1 == svn_url.contains(i.0)) {
-            let time = DateTime::parse_from_rfc3339(&entry.1.commit.date)?;
-            if time.date().year() >= 2021 {}
+            let time = DateTime::parse_from_rfc3339(&entry.commit.date).unwrap();
+            if time.date().year() >= 2021 {
+                return true;
+            }
         }
+        false
     })?;
     println!(
         "time took with SVN: {:#?} msec",
