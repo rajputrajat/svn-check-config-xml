@@ -4,6 +4,7 @@ use async_std::{
     path::{Path, PathBuf},
 };
 use chrono::{DateTime, Datelike};
+use log::trace;
 use serde::{Deserialize, Serialize};
 use std::{env, time::Instant};
 use svn_cmd::{Credentials, SvnCmd};
@@ -23,6 +24,7 @@ async fn main() -> Result<()> {
         None,
     )?;
     let list = cmd.list_parallel(&svn_path, |svn_url, entry| {
+        trace!("processing svn dir url: {}", svn_url);
         let config_str = [("tags", true), ("Variation", false)];
         if config_str.iter().all(|i| i.1 == svn_url.contains(i.0)) {
             let time = DateTime::parse_from_rfc3339(&entry.commit.date).unwrap();
@@ -40,6 +42,7 @@ async fn main() -> Result<()> {
     for e in list.lock().unwrap().iter() {
         let path = format!("{}/{}", e.0 .0, e.1.name);
         if path.contains("configuration.xml") {
+            trace!("cat: {}", path);
             async {
                 let file_text = cmd.cat(&path).await.unwrap();
                 config_handler
