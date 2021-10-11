@@ -3,6 +3,7 @@ use async_std::{
     fs::{self, File},
     path::{Path, PathBuf},
 };
+use chrono::{DateTime, Datelike};
 use serde::{Deserialize, Serialize};
 use std::{env, time::Instant};
 use svn_cmd::{Credentials, SvnCmd};
@@ -30,17 +31,22 @@ async fn main() -> Result<()> {
     for e in list.lock().unwrap().iter() {
         let path = format!("{}/{}", e.0 .0, e.1.name);
         if path.contains("configuration.xml") {
-            println!("{:?}", e);
-            async {
-                let file_text = cmd.cat(&path).await.unwrap();
-                config_handler
-                    .save_new_file(&path, &file_text)
-                    .await
-                    .unwrap();
+            let time = DateTime::parse_from_rfc3339(&e.1.commit.date)?;
+            if time.date().year() >= 2021 {
+                println!("{:?}", time);
+                println!("{:?}", e);
+                async {
+                    let file_text = cmd.cat(&path).await.unwrap();
+                    config_handler
+                        .save_new_file(&path, &file_text)
+                        .await
+                        .unwrap();
+                }
+                .await;
             }
-            .await;
         }
     }
+    config_handler.set_db().await?;
     Ok(())
 }
 
@@ -63,7 +69,11 @@ impl ConfigFiles {
         }
         let db_file_path = dir_path.join("map.toml");
         let db = ConfigFiles::get_db(db_file_path.to_str().unwrap()).await?;
-        Ok(Self { dir: dir_path, db })
+        Ok(Self {
+            dir: dir_path,
+            db_file_path: db_file_path.to_str().unwrap().to_owned(),
+            db,
+        })
     }
 
     async fn get_db(path: &str) -> Result<DbConfig> {
@@ -79,9 +89,9 @@ impl ConfigFiles {
         }
     }
 
-    async fn set_db(path: &str, db: DbConfig) -> Result<()> {
-        let text = toml::to_string::<DbConfig>(&db)?;
-        fs::write(path, &text).await?;
+    async fn set_db(&mut self) -> Result<()> {
+        let text = toml::to_string::<DbConfig>(&self.db)?;
+        fs::write(&self.db_file_path, &text).await?;
         Ok(())
     }
 
@@ -100,5 +110,6 @@ impl ConfigFiles {
 #[derive(Debug)]
 struct ConfigFiles {
     dir: PathBuf,
+    db_file_path: String,
     db: DbConfig,
 }
