@@ -17,3 +17,4 @@ serde-xml-rs = "0.5.0"
 svn-cmd = { git = "https://github.com/rajputrajat/svn-cmd.git" }
 svn-list-parallel-rs = { path = "../svn_list_filter_rs" }
 toml = "0.5.8"
+uuid = { version = "0.8", features = ["serde", "v4"] }
