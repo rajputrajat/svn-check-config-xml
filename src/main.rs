@@ -23,6 +23,10 @@ async fn main() -> Result<()> {
     list.lock()
         .unwrap()
         .iter()
+        .filter(|e| {
+            let path = format!("{}/{}", e.0 .0, e.1.name);
+            path.contains("configuration.xml")
+        })
         .for_each(|e| println!("{:?}", e));
     println!(
         "time took: {:#?} msec",
