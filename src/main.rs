@@ -22,7 +22,13 @@ async fn main() -> Result<()> {
         },
         None,
     )?;
-    let list = cmd.list_parallel(&svn_path)?;
+    let list = cmd.list_parallel(&svn_path, |svn_url, entry| {
+        let config_str = [("configuration.xml", true), ("Variation", false)];
+        if config_str.iter().all(|i| i.1 == svn_url.contains(i.0)) {
+            let time = DateTime::parse_from_rfc3339(&entry.1.commit.date)?;
+            if time.date().year() >= 2021 {}
+        }
+    })?;
     println!(
         "time took with SVN: {:#?} msec",
         Instant::now().duration_since(instant).as_millis()
@@ -30,21 +36,14 @@ async fn main() -> Result<()> {
     let mut config_handler = ConfigFiles::new().await?;
     for e in list.lock().unwrap().iter() {
         let path = format!("{}/{}", e.0 .0, e.1.name);
-        if path.contains("configuration.xml") {
-            let time = DateTime::parse_from_rfc3339(&e.1.commit.date)?;
-            if time.date().year() >= 2021 {
-                println!("{:?}", time);
-                println!("{:?}", e);
-                async {
-                    let file_text = cmd.cat(&path).await.unwrap();
-                    config_handler
-                        .save_new_file(&path, &file_text)
-                        .await
-                        .unwrap();
-                }
-                .await;
-            }
+        async {
+            let file_text = cmd.cat(&path).await.unwrap();
+            config_handler
+                .save_new_file(&path, &file_text)
+                .await
+                .unwrap();
         }
+        .await;
     }
     config_handler.set_db().await?;
     Ok(())
