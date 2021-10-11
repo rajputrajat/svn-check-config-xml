@@ -1,4 +1,6 @@
 use anyhow::Result;
+use async_std::{fs::File, path::Path};
+use serde::{Deserialize, Serialize};
 use std::{env, time::Instant};
 use svn_cmd::{Credentials, SvnCmd};
 use svn_list_parallel_rs::ListParallel;
@@ -15,6 +17,7 @@ async fn main() -> Result<()> {
         },
         None,
     )?;
+    let dir = Path::new(&env::var("USERPROFILE")?).join("config_xmls");
     let list = cmd.list_parallel(&svn_path)?;
     println!(
         "time took with SVN: {:#?} msec",
