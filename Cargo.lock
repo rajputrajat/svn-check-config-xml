@@ -718,7 +718,7 @@ dependencies = [
 [[package]]
 name = "svn-list-parallel-rs"
 version = "0.1.0"
-source = "git+https://github.com/rajputrajat/svn-list-parallel-rs.git#24e9f842b73c41891f2fdb4118335965f028aa0b"
+source = "git+https://github.com/rajputrajat/svn-list-parallel-rs.git#4d93916daa625a098d44117660dc5c0737c49570"
 dependencies = [
  "anyhow",
  "async-recursion",

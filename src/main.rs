@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_std::{
     fs::{self, File},
     path::{Path, PathBuf},
@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
         Instant::now().duration_since(instant).as_millis()
     );
     let mut config_handler = ConfigFiles::new().await?;
-    for e in list.lock().unwrap().iter() {
+    for e in list.lock().await.iter() {
         let path = format!("{}/{}", e.0 .0, e.1.name);
         if path.contains("configuration.xml") {
             trace!("cat: {}", path);
@@ -69,10 +69,13 @@ impl ConfigFiles {
             fs::create_dir_all(&dir_path).await?;
         }
         let db_file_path = dir_path.join("map.toml");
-        let db = ConfigFiles::get_db(db_file_path.to_str().unwrap()).await?;
+        let db_file_path = db_file_path
+            .to_str()
+            .ok_or_else(|| anyhow!("couldn't convern path to str"))?;
+        let db = ConfigFiles::get_db(db_file_path).await?;
         Ok(Self {
             dir: dir_path,
-            db_file_path: db_file_path.to_str().unwrap().to_owned(),
+            db_file_path: db_file_path.to_owned(),
             db,
         })
     }
