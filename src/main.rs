@@ -43,14 +43,8 @@ async fn main() -> Result<()> {
         let path = format!("{}/{}", e.0 .0, e.1.name);
         if path.contains("configuration.xml") {
             trace!("cat: {}", path);
-            async {
-                let file_text = cmd.cat(&path).await.unwrap();
-                config_handler
-                    .save_new_file(&path, &file_text)
-                    .await
-                    .unwrap();
-            }
-            .await;
+            let file_text = cmd.cat(&path).await?;
+            config_handler.save_new_file(&path, &file_text).await?;
         }
     }
     config_handler.set_db().await?;
