@@ -27,12 +27,12 @@ async fn main() -> Result<()> {
         trace!("processing svn dir url: {}", svn_url);
         let config_str = [("tags", true), ("Variation", false)];
         if config_str.iter().all(|i| i.1 == svn_url.contains(i.0)) {
-            let time = DateTime::parse_from_rfc3339(&entry.commit.date).unwrap();
+            let time = DateTime::parse_from_rfc3339(&entry.commit.date)?;
             if time.date().year() >= 2021 {
-                return true;
+                return Ok(true);
             }
         }
-        false
+        Ok(false)
     })?;
     println!(
         "time took with SVN: {:#?} msec",
